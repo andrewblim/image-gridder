@@ -13,6 +13,12 @@ def generateGrid(input_images, output_image, height=None, width=None,
                  rows=None, cols=None, border=0, add_labels=False, 
                  permute=False, verbose=False):
     
+    """
+    Generates the image grid with indicated height and width and indicated rows
+    and columns (tries to make some smart assumptions if these are not
+    provided). Optionally adds a border and labels if these are specified. 
+    """
+    
     if permute: random.shuffle(input_images)
     
     images = []
@@ -117,7 +123,8 @@ def generateGrid(input_images, output_image, height=None, width=None,
 
 def int2colstring(x):
     """
-    Alex Martelli's int2base code from 
+    Converts an int to a column string (base 26 where the digits are A-Z). 
+    Adapted from Alex Martelli's int2base code from the thread 
     http://stackoverflow.com/questions/2267362/convert-integer-to-a-string-in-a-given-numeric-base-in-python
     """
     if x < 0: sign = -1
