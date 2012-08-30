@@ -1,15 +1,17 @@
 
-import Image
+import Image, ImageFont, ImageDraw
 import math
 import random
-import sys
+import string
 
 ASPECT_TOLERANCE = 0
 SCALEUP_LINEAR_TOLERANCE = 1.05
+LABEL_SIZE_FACTOR = 0.15
+FONT_PATH = "/Library/Fonts/"
 
 def generateGrid(input_images, output_image, height=None, width=None, 
-                 rows=None, cols=None, border_width=0, 
-                 add_labels=False, permute=False, verbose=False):
+                 rows=None, cols=None, border=0, add_labels=False, 
+                 permute=False, verbose=False):
     
     if permute: random.shuffle(input_images)
     
@@ -69,22 +71,64 @@ def generateGrid(input_images, output_image, height=None, width=None,
     
     # generate new image
     
+    grid_width = width
+    grid_height = height
+    width += 2 * border
+    height += 2 * border
+    if add_labels == True:
+        label_width = int(LABEL_SIZE_FACTOR * min(width, height))
+        width += label_width
+        height += label_width
+    else:
+        label_width = 0
+        
     # to do: inherit mode from child images? for now just RGB hard-coded
-    output = Image.new("RGB", size=(width, height))
-    box_size = (float(width)/cols, float(height)/rows)
+    output = Image.new("RGB", size=(width, height), color="white")
+    offset = border + label_width
+    box_size = (float(grid_width)/cols, float(grid_height)/rows)
     
     for r in range(rows):
         for c in range(cols):
-            box = (int(box_size[0] * r), int(box_size[1] * c), 
-                   int(box_size[0] * (r+1)), int(box_size[1] * (c+1)))
-            print box
+            box = (int(box_size[0] * c), int(box_size[1] * r), 
+                   int(box_size[0] * (c+1)), int(box_size[1] * (r+1)))
+            offset_box = tuple([x + offset for x in box])
             i = cols * r + c
-            images[i] = images[i].resize((width, height))
-            images[i].save(str(i) + ".jpg")
-            output.paste(images[i].crop(box), box)
+            images[i] = images[i].resize((grid_width, grid_height))
+            output.paste(images[i].crop(box), offset_box)
     
     # if add_labels == True, add some labels on (increasing image size)
     
-    
-    
+    if add_labels == True:
+        
+        font_size = int(min(box_size[0], box_size[1])/3)
+        font = ImageFont.truetype(FONT_PATH + "Arial.ttf", font_size, encoding="unic")
+        draw = ImageDraw.Draw(output)
+        font_offset = int(box_size[1]/3)
+        for r in range(rows):
+            draw_point = (border, offset + font_offset + int(box_size[1] * r))
+            draw.text(draw_point, str(r+1), font=font, fill="black")
+        font_offset = int(box_size[0]/3)
+        for c in range(cols):
+            draw_point = (offset + font_offset + int(box_size[0] * c), border)
+            draw.text(draw_point, int2colstring(c+1), font=font, fill="black")
+
     output.save(output_image)
+    
+
+def int2colstring(x):
+    """
+    Alex Martelli's int2base code from 
+    http://stackoverflow.com/questions/2267362/convert-integer-to-a-string-in-a-given-numeric-base-in-python
+    """
+    if x < 0: sign = -1
+    elif x==0: return '0'
+    else: sign = 1
+    x *= sign
+    digits = []
+    while x:
+        digits.append(string.uppercase[x % 26 - 1])
+        x /= 26
+    if sign < 0:
+        digits.append('-')
+    digits.reverse()
+    return ''.join(digits)
